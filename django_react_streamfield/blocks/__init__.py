@@ -1,4 +1,5 @@
 # Import block types defined in submodules into namespace
+from .autocomplete_block import *  # NOQA
 from .base import *  # NOQA
 from .field_block import *  # NOQA
 from .list_block import *  # NOQA

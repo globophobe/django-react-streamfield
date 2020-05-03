@@ -97,7 +97,10 @@ class BlockWidget(forms.Widget):
     def media(self):
         root = "django_react_streamfield"
         return self.block_def.all_media() + Media(
-            js=[f"{root}/js/wagtail-react-streamfield.js"],
+            js=[
+                f"{root}/js/wagtail-react-streamfield.js",
+                f"{root}/js/django-react-streamfield.js",
+            ],
             css={
                 "all": [
                     f"{root}/css/wagtail-react-streamfield.css",

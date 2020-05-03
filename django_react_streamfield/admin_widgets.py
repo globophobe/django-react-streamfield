@@ -1,3 +1,4 @@
+from django.contrib.admin.widgets import AutocompleteMixin
 from django.forms import widgets
 
 
@@ -10,3 +11,13 @@ class AdminAutoHeightTextInput(widgets.Textarea):
         if attrs:
             default_attrs.update(attrs)
             super().__init__(default_attrs)
+
+
+class AdminAutocompleteChooser(AutocompleteMixin, widgets.HiddenInput):
+    template_name = "django_react_streamfield/widgets/autocomplete_chooser.html"
+
+
+class AdminAutocompleteMultipleChooser(AutocompleteMixin, widgets.HiddenInput):
+    template_name = (
+        "django_react_streamfield/widgets/autocomplete_multiple_chooser.html"
+    )
