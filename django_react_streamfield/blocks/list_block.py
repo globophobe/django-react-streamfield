@@ -3,7 +3,9 @@ from uuid import uuid4
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.utils import ErrorList
+from django.utils.functional import cached_property
 from django.utils.html import format_html, format_html_join
+from django.utils.translation import ugettext_lazy as _
 
 from ..exceptions import RemovedError
 from ..widgets import BlockData
@@ -24,6 +26,19 @@ class ListBlock(Block):
             self.meta.default = [self.child_block.get_default()]
 
         self.dependencies = [self.child_block]
+
+    @cached_property
+    def definition(self):
+        definition = super(ListBlock, self).definition
+        definition.update(
+            children=[self.child_block.definition],
+            minNum=self.meta.min_num,
+            maxNum=self.meta.max_num,
+        )
+        html = self.get_instance_html([])
+        if html is not None:
+            definition["html"] = html
+        return definition
 
     @property
     def media(self):
@@ -74,8 +89,8 @@ class ListBlock(Block):
             prepared_value.append(child_value)
         return prepared_value
 
-    def value_omitted_from_data(self, data, files, prefix):
-        return ("%s-count" % prefix) not in data
+    def value_omitted_from_data(self, *args, **kwargs):
+        raise RemovedError
 
     def clean(self, value):
         result = []
@@ -89,14 +104,28 @@ class ListBlock(Block):
                 errors.append(None)
 
         if any(errors):
-            # The message here is arbitrary - outputting error messages is delegated to the child blocks,
-            # which only involves the 'params' list
             raise ValidationError("Validation error in ListBlock", params=errors)
+
+        if self.meta.min_num is not None and self.meta.min_num > len(value):
+            raise ValidationError(
+                _("The minimum number of items is %d") % self.meta.min_num
+            )
+        elif self.required and len(value) == 0:
+            raise ValidationError(_("This field is required."))
+
+        if self.meta.max_num is not None and self.meta.max_num < len(value):
+            raise ValidationError(
+                _("The maximum number of items is %d") % self.meta.max_num
+            )
 
         return result
 
     def to_python(self, value):
-        # recursively call to_python on children and return as a list
+        # If child block supports bulk retrieval, use it.
+        if hasattr(self.child_block, "bulk_to_python"):
+            return self.child_block.bulk_to_python(value)
+
+        # Otherwise recursively call to_python on each child and return as a list.
         return [self.child_block.to_python(item) for item in value]
 
     def get_prep_value(self, value):
@@ -139,6 +168,8 @@ class ListBlock(Block):
         # block is being used for. Feel encouraged to specify an icon in your
         # descendant block type
         icon = "placeholder"
+        min_num = None
+        max_num = None
 
 
 DECONSTRUCT_ALIASES = {
