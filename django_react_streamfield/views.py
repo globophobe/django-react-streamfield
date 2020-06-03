@@ -1,4 +1,4 @@
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from django.views.generic.list import BaseListView
 
 
@@ -25,11 +25,6 @@ class AutocompleteReverseLookupView(BaseListView):
         )
 
     def preflight(self, request):
-        if not self.model_admin.get_search_fields(request):
-            raise Http404(
-                "%s must have search_fields for the autocomplete_view."
-                % type(self.model_admin).__name__
-            )
         if not self.has_perm(request):
             return JsonResponse({"error": "403 Forbidden"}, status=403)
 
